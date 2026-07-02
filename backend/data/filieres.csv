@@ -1,0 +1,22 @@
+nom_departement,nom_filiere,est_3a,email_1a,email_2a,email_3a
+Génie des Procédés Industriels,Génie de l'Energie et des Procédés Industriels,false,1.annee.gepi@enim.ac.ma,,
+Génie des Matériaux,Génie des Matériaux et de Mécanique,false,1.annee.gmm@enim.ac.ma,,
+Mines,Génie des Mines et de l'Environnement,false,1.annee.gme@enim.ac.ma,,
+Informatique,Ingénierie des Systèmes d'Information et de Production,false,1.annee.isip@enim.ac.ma,,
+Sciences de la Terre,Génie Civil et Minier,false,1.annee.gcm@enim.ac.ma,,
+Génie Industriel,Génie Industriel,false,1.annee.gi@enim.ac.ma,,
+Électromécanique,Génie Electromécanique,false,1.annee.ge@enim.ac.ma,,
+Mines,Aménagement et Exploitation des Sols et Sous Sols,true,,ae3s.2.annee@enim.ac.ma,ae3s.3.annee@enim.ac.ma
+Électromécanique,Efficacité Energétique et Intégration des Energies,true,,ee.2.annee@enim.ac.ma,eeie.3.annee@enim.ac.ma
+Électromécanique,Electromécanique,true,,elm.2.annee@enim.ac.ma,elm.3.annee@enim.ac.ma
+Mines,Environnement et Sécurité Industriels,true,,esi.2.annee@enim.ac.ma,esi.3.annee@enim.ac.ma
+Sciences de la Terre,Génie Civil et Minier,true,,gcm.2.annee@enim.ac.ma,gcm.3.annee@enim.ac.ma
+Génie des Procédés Industriels,Génie Energétique,true,,ge.2.annee@enim.ac.ma,ge.3.annee@enim.ac.ma
+Génie des Procédés Industriels,Ingénierie des Procédés Industriels,true,,ipi.2.annee@enim.ac.ma,ipi.3.annee@enim.ac.ma
+Génie des Matériaux,Matériaux et Contrôle Qualité,true,,mcq.2.annee@enim.ac.ma,mcq.3.annee@enim.ac.ma
+Électromécanique,Maintenance Industrielle,true,,mi.2.annee@enim.ac.ma,mi.3.annee@enim.ac.ma
+Informatique,Génie Productique,true,,gp.2.annee@enim.ac.ma,gp.3.annee@enim.ac.ma
+Informatique,Génie Informatique,true,,info.2.annee@enim.ac.ma,
+Génie Industriel,Génie Industriel,true,,gi.2.annee@enim.ac.ma,
+Informatique,Ingénierie des Données,true,,,id.3.annee@enim.ac.ma
+Génie Industriel,Management Industriel,true,,,mgi.3.annee@enim.ac.ma

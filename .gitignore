@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.DS_Store
+.env
+backend/.env
+backend/uploads/
+COMPTES_ADMINS.txt
+.local/
+*.xlsx
+~$*
