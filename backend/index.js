@@ -51,7 +51,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 app.use('/api/visites', visitesRouter);
 
-app.post('/api/auth/login/admin', loginLimiter, async (req, res) => {
+app.post('/api/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ message: 'Email et mot de passe requis' });
   try {
@@ -65,13 +65,13 @@ app.post('/api/auth/login/admin', loginLimiter, async (req, res) => {
       JWT_SECRET,
       { expiresIn: '8h' }
     );
-    res.json({ token, user: { id: admin.id, email: admin.email, nom: admin.nom, prenom: admin.prenom, role: admin.role } });
+    res.json({ token, user: { id: admin.id, email: admin.email, nom: admin.nom, prenom: admin.prenom, role: admin.role }, userType: 'admin', adminRole: admin.role });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
 
-app.post('/api/auth/forgot-password/admin', async (req, res) => {
+app.post('/api/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: 'Email requis' });
   try {
@@ -98,8 +98,9 @@ app.post('/api/auth/forgot-password/admin', async (req, res) => {
   }
 });
 
-app.post('/api/auth/reset-password/admin', async (req, res) => {
-  const { token, password } = req.body;
+app.post('/api/reset-password-admin/:token', async (req, res) => {
+  const { token } = req.params;
+  const { newPassword: password } = req.body;
   if (!token || !password) return res.status(400).json({ message: 'Token et mot de passe requis' });
   if (password.length < 8) return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 8 caractères' });
   try {
