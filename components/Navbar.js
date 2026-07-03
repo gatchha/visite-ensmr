@@ -5,7 +5,6 @@ export default function Navbar({ isLoggedIn = false }) {
   const router = useRouter();
   const [userType, setUserType] = useState(null);
   const [adminRole, setAdminRole] = useState(null);
-  const [menuOuvert, setMenuOuvert] = useState(false);
 
   useEffect(() => {
     // Détecter le type d'utilisateur connecté
@@ -92,61 +91,16 @@ export default function Navbar({ isLoggedIn = false }) {
 
         {/* Affiche "Tableau de bord" uniquement si connecté */}
         {isLoggedIn && userType === "admin" && (
-          <div
-            style={{ position: "relative" }}
-            onMouseEnter={() => setMenuOuvert(true)}
-            onMouseLeave={() => setMenuOuvert(false)}
+          <a
+            href={getDashboardLink()}
+            style={{ color: "#002147", textDecoration: "none", cursor: "pointer" }}
+            onClick={(e) => {
+              e.preventDefault();
+              router.push(getDashboardLink());
+            }}
           >
-            <a
-              href={getDashboardLink()}
-              style={{ color: "#002147", textDecoration: "none", cursor: "pointer" }}
-              onClick={(e) => {
-                e.preventDefault();
-                router.push(getDashboardLink());
-              }}
-            >
-              Tableau de bord Admin
-            </a>
-
-            {menuOuvert && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "100%",
-                  left: 0,
-                  backgroundColor: "#ffffff",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-                  borderRadius: "6px",
-                  minWidth: "180px",
-                  zIndex: 1001,
-                  paddingTop: "0.5rem",
-                }}
-              >
-                <a
-                  href="/admins/dashboard"
-                  style={{ display: "block", padding: "0.5rem 1rem", color: "#002147", textDecoration: "none" }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setMenuOuvert(false);
-                    router.push("/admins/dashboard");
-                  }}
-                >
-                  Stage
-                </a>
-                <a
-                  href="/admins/visite_suivi"
-                  style={{ display: "block", padding: "0.5rem 1rem", color: "#002147", textDecoration: "none" }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setMenuOuvert(false);
-                    router.push("/admins/visite_suivi");
-                  }}
-                >
-                  Visites
-                </a>
-              </div>
-            )}
-          </div>
+            Tableau de bord
+          </a>
         )}
 
         {/* Affiche "Tableau de bord" pour les étudiants */}
