@@ -198,7 +198,7 @@ export default function AdminVisites() {
             <label className="form-label">Filières concernées</label>
             <div>
               {filieres
-                .filter((f) => form.niveau === '1A' ? !f.est_3a : f.est_3a)
+                .filter((f) => form.niveau === '3A' ? f.est_3a : !f.est_3a)
                 .map((f) => (
                   <div className="form-check" key={f.id}>
                     <input
