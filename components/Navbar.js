@@ -131,13 +131,6 @@ export default function Navbar({ isLoggedIn = false }) {
           </a>
         )}
 
-        <a 
-          href="#footer" 
-          style={{ color: "#002147", textDecoration: "none", cursor: "pointer" }}
-        >
-          À propos
-        </a>
-
         {/* 🆕 CORRIGÉ : Le bouton affiche "Déconnexion" si connecté */}
         {isLoggedIn ? (
           <button
