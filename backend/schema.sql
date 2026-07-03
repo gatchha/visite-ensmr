@@ -88,3 +88,35 @@ CREATE TABLE etudiants_eligibles (
 CREATE INDEX idx_eligibles_email ON etudiants_eligibles(email);
 CREATE INDEX idx_eligibles_annee ON etudiants_eligibles(annee_universitaire);
 CREATE INDEX idx_eligibles_filiere ON etudiants_eligibles(niveau, nom_filiere_nettoye);
+
+INSERT INTO departements (nom_departement) VALUES
+  ('Génie des Procédés Industriels'),
+  ('Génie des Matériaux'),
+  ('Mines'),
+  ('Informatique'),
+  ('Sciences de la Terre'),
+  ('Génie Industriel'),
+  ('Électromécanique');
+
+INSERT INTO filieres (nom_filiere, est_3a, departement_id, email_1a, email_2a, email_3a) VALUES
+  ('Génie de l''Energie et des Procédés Industriels', false, (SELECT id FROM departements WHERE nom_departement='Génie des Procédés Industriels'), 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie des Matériaux et de Mécanique',            false, (SELECT id FROM departements WHERE nom_departement='Génie des Matériaux'),            'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie des Mines et de l''Environnement',         false, (SELECT id FROM departements WHERE nom_departement='Mines'),                           'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Ingénierie des Systèmes d''Information et de Production', false, (SELECT id FROM departements WHERE nom_departement='Informatique'),           'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie Civil et Minier',                          false, (SELECT id FROM departements WHERE nom_departement='Sciences de la Terre'),            'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie Industriel',                               false, (SELECT id FROM departements WHERE nom_departement='Génie Industriel'),                'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie Electromécanique',                         false, (SELECT id FROM departements WHERE nom_departement='Électromécanique'),                'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Aménagement et Exploitation des Sols et Sous Sols', true, (SELECT id FROM departements WHERE nom_departement='Mines'),                        'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Efficacité Energétique et Intégration des Energies', true, (SELECT id FROM departements WHERE nom_departement='Électromécanique'),            'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Electromécanique',                               true,  (SELECT id FROM departements WHERE nom_departement='Électromécanique'),                'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Environnement et Sécurité Industriels',          true,  (SELECT id FROM departements WHERE nom_departement='Mines'),                           'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie Civil et Minier',                          true,  (SELECT id FROM departements WHERE nom_departement='Sciences de la Terre'),            'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie Energétique',                              true,  (SELECT id FROM departements WHERE nom_departement='Génie des Procédés Industriels'), 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Ingénierie des Procédés Industriels',            true,  (SELECT id FROM departements WHERE nom_departement='Génie des Procédés Industriels'), 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Matériaux et Contrôle Qualité',                  true,  (SELECT id FROM departements WHERE nom_departement='Génie des Matériaux'),            'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Maintenance Industrielle',                       true,  (SELECT id FROM departements WHERE nom_departement='Électromécanique'),                'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie Productique',                              true,  (SELECT id FROM departements WHERE nom_departement='Informatique'),                    'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie Informatique',                             true,  (SELECT id FROM departements WHERE nom_departement='Informatique'),                    'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Génie Industriel',                               true,  (SELECT id FROM departements WHERE nom_departement='Génie Industriel'),                'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Ingénierie des Données',                         true,  (SELECT id FROM departements WHERE nom_departement='Informatique'),                    'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma'),
+  ('Management Industriel',                          true,  (SELECT id FROM departements WHERE nom_departement='Génie Industriel'),                'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma', 'test-stage@enim.ac.ma');
