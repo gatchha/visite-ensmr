@@ -78,17 +78,6 @@ export default function Navbar({ isLoggedIn = false }) {
 
       {/* Liens de navigation */}
       <div style={{ display: "flex", gap: "2rem", fontSize: "1rem" }}>
-        <a 
-          href="/" 
-          style={{ color: "#002147", textDecoration: "none", cursor: "pointer" }}
-          onClick={(e) => {
-            e.preventDefault();
-            router.push("/");
-          }}
-        >
-          Accueil
-        </a>
-
         {/* Affiche "Tableau de bord" uniquement si connecté */}
         {isLoggedIn && userType === "admin" && (
           <a
