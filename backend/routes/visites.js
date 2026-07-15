@@ -299,6 +299,9 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
             const formatHeure = (h) => h ? String(h).slice(0, 5) : '';
             const dateRabat = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
 
+            const ccDirection = process.env.CC_VISITE ||
+                'directeur@enim.ac.ma,direction.pedagogique@enim.ac.ma,sg@enim.ac.ma,achat@enim.ac.ma,restaurant@enim.ac.ma';
+
             for (const filiere of filieresVisite.rows) {
                 if (!filiere.email_liste) continue;
 
@@ -330,19 +333,19 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
 
                 const pieces = [{ filename: nomFichier, content: pdfBuffer, contentType: 'application/pdf' }];
 
-                const etudiantsResult = await pool.query(
-                    `SELECT nom, prenom, matricule
+                const countResult = await pool.query(
+                    `SELECT COUNT(*) AS total
                      FROM etudiants_eligibles
                      WHERE niveau = $1
                        AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2))
-                       AND actif = true
-                     ORDER BY nom, prenom`,
+                       AND actif = true`,
                     [visite.niveau, filiere.nom_filiere]
                 );
+                const totalEtudiants = parseInt(countResult.rows[0].total, 10) || visite.nb_eleves || 0;
 
-                if (etudiantsResult.rows.length > 0) {
+                if (totalEtudiants > 0) {
                     const emargementBuffer = await generateEmargementPdf(
-                        etudiantsResult.rows, visite, filiere.nom_filiere, dateFormatee, niveauLabel
+                        totalEtudiants, visite, filiere.nom_filiere, dateFormatee, niveauLabel
                     );
                     const nomEmargement = `Emargement_${filiere.nom_filiere.replace(/\s+/g, '_')}_${dateFormatee.replace(/\//g, '-')}.pdf`;
                     pieces.push({ filename: nomEmargement, content: emargementBuffer, contentType: 'application/pdf' });
@@ -353,7 +356,8 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
                     `Visite d'entreprise – ${visite.entreprise} le ${dateFormatee}`,
                     html,
                     '',
-                    pieces
+                    pieces,
+                    ccDirection
                 );
             }
             const nbEnvoyes = filieresVisite.rows.filter(f => f.email_liste).length;

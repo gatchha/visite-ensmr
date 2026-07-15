@@ -18,16 +18,16 @@ function getSceauBase64() {
     return `data:image/png;base64,${buffer.toString('base64')}`;
 }
 
-async function generateEmargementPdf(etudiants, visite, nomFiliere, dateFormatee, niveauLabel) {
+async function generateEmargementPdf(totalEtudiants, visite, nomFiliere, dateFormatee, niveauLabel) {
     const sceauSrc = getSceauBase64();
     const dateRabat = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
 
-    const lignes = etudiants.map((e, i) => `
+    const lignes = Array.from({ length: totalEtudiants }, (_, i) => `
         <tr>
             <td>${i + 1}</td>
-            <td>${escapeHtml(e.matricule || '')}</td>
-            <td>${escapeHtml(e.nom || '')}</td>
-            <td>${escapeHtml(e.prenom || '')}</td>
+            <td></td>
+            <td></td>
+            <td></td>
             <td></td>
         </tr>
     `).join('');
@@ -52,7 +52,6 @@ async function generateEmargementPdf(etudiants, visite, nomFiliere, dateFormatee
   table.emargement { width: 100%; border-collapse: collapse; }
   table.emargement th { background-color: #002147; color: white; padding: 7px 8px; border: 1px solid #999; font-size: 11px; text-align: center; }
   table.emargement td { padding: 6px 8px; border: 1px solid #bbb; font-size: 11px; text-align: center; height: 28px; }
-  table.emargement td:nth-child(3), table.emargement td:nth-child(4) { text-align: left; }
   .sceau { position: fixed; bottom: 40px; right: 40px; width: 100px; opacity: 0.8; }
 </style>
 </head>
@@ -76,14 +75,14 @@ async function generateEmargementPdf(etudiants, visite, nomFiliere, dateFormatee
 <div class="infos">
   <div>Filière : <span>${escapeHtml(nomFiliere)}</span> &nbsp;|&nbsp; Niveau : <span>${escapeHtml(niveauLabel)}</span></div>
   <div>Date : <span>${escapeHtml(dateFormatee)}</span> &nbsp;|&nbsp; Entreprise : <span>${escapeHtml(visite.entreprise)}</span></div>
-  <div>Ville : <span>${escapeHtml(visite.ville)}</span></div>
+  <div>Ville : <span>${escapeHtml(visite.ville)}</span> &nbsp;|&nbsp; Effectif : <span>${totalEtudiants} étudiants</span></div>
 </div>
 
 <table class="emargement">
   <thead>
     <tr>
       <th style="width:40px;">N°</th>
-      <th style="width:100px;">Matricule</th>
+      <th style="width:120px;">Matricule</th>
       <th>Nom</th>
       <th>Prénom</th>
       <th style="width:130px;">Émargement</th>

@@ -12,8 +12,8 @@ const createTransporter = () => {
 
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
@@ -189,7 +189,7 @@ const formatDate = (dateString) => {
   }
 };
 
-const sendEmail = async (to, subject, htmlContent, textContent = '', attachments = []) => {
+const sendEmail = async (to, subject, htmlContent, textContent = '', attachments = [], cc = null) => {
   try {
     if (!to) {
       throw new Error('Adresse email destinataire manquante');
@@ -197,16 +197,20 @@ const sendEmail = async (to, subject, htmlContent, textContent = '', attachments
 
     const transporter = createTransporter();
 
-    const result = await transporter.sendMail({
+    const override = process.env.EMAIL_OVERRIDE;
+    const mailOptions = {
       from: `"Service des Stages - ENSMR"<${process.env.EMAIL_USER}>`,
-      to,
-      subject,
+      to: override || to,
+      subject: override ? `[TEST → ${to}] ${subject}` : subject,
       text: textContent,
       html: htmlContent,
       attachments,
-    });
+    };
+    if (!override && cc) mailOptions.cc = cc;
 
-    console.log("Email envoyé avec succès à:", to, "- Message ID:", result.messageId);
+    const result = await transporter.sendMail(mailOptions);
+
+    console.log("Email envoyé avec succès à:", override || to, "- Message ID:", result.messageId);
     return { success: true, messageId: result.messageId };
 
   } catch (error) {

@@ -174,13 +174,14 @@ export default function VisitesSuivi() {
     if (!confirm("Valider cette visite et envoyer la notification aux étudiants ?")) return;
     try {
       const res = await authFetch(`/api/visites/${id}/valider`, { method: "PATCH" });
-      if (res.ok) chargerVisites();
-      else {
+      if (!res.ok) {
         const data = await res.json();
         alert(data.message || "Erreur lors de la validation.");
       }
     } catch (err) {
       console.error("Erreur validation:", err);
+    } finally {
+      chargerVisites();
     }
   };
 
@@ -224,9 +225,8 @@ export default function VisitesSuivi() {
               <option value="">Toutes</option>
               {filieres
                 .filter((f) => {
-                  if (filtreNiveau === "1A") return !f.est_3a && f.email_1a;
-                  if (filtreNiveau === "2A") return f.est_3a && f.email_2a;
-                  return f.est_3a && f.email_3a;
+                  if (filtreNiveau === "3A") return f.est_3a && f.email_3a;
+                  return !f.est_3a;
                 })
                 .map((f) => (
                   <option key={f.id} value={f.id}>
@@ -426,9 +426,8 @@ export default function VisitesSuivi() {
                 <div>
                   {filieres
                     .filter((f) => {
-                      if (formEdition.niveau === "1A") return !f.est_3a && f.email_1a;
-                      if (formEdition.niveau === "2A") return f.est_3a && f.email_2a;
-                      return f.est_3a && f.email_3a;
+                      if (formEdition.niveau === "3A") return f.est_3a;
+                      return !f.est_3a;
                     })
                     .map((f) => (
                       <div className="form-check" key={f.id}>
