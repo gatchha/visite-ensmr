@@ -1,9 +1,25 @@
 import { useEffect } from "react";
 import Head from 'next/head';
+import { useRouter } from "next/router";
 import 'bootstrap/dist/css/bootstrap.css';
 
+const PAGES_PUBLIQUES = ['/', '/login', '/forgot-password'];
+
 function MyApp({ Component, pageProps }) {
+  const router = useRouter();
+
   useEffect(() => {
+    const pathname = router.pathname;
+    const estPublique = PAGES_PUBLIQUES.some(p => pathname === p || pathname.startsWith('/reset-password'));
+
+    if (!estPublique) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.replace('/login');
+        return;
+      }
+    }
+
     import("bootstrap/dist/js/bootstrap.js");
 
     if (!window.__fetchPatched) {
