@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Head from 'next/head';
 import { useRouter } from "next/router";
 import 'bootstrap/dist/css/bootstrap.css';
@@ -6,6 +6,7 @@ import 'bootstrap/dist/css/bootstrap.css';
 const PAGES_PUBLIQUES = ['/', '/login', '/forgot-password'];
 
 function MyApp({ Component, pageProps }) {
+  const [authVerifie, setAuthVerifie] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -19,6 +20,8 @@ function MyApp({ Component, pageProps }) {
         return;
       }
     }
+
+    setAuthVerifie(true);
 
     import("bootstrap/dist/js/bootstrap.js");
 
@@ -35,6 +38,8 @@ function MyApp({ Component, pageProps }) {
       window.__fetchPatched = true;
     }
   }, []);
+
+  if (!authVerifie) return null;
 
   return (
     <>
