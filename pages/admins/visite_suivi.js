@@ -185,6 +185,47 @@ export default function VisitesSuivi() {
     }
   };
 
+  const downloadPdf = async (visiteId, filiereId, type) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`/api/visites/${visiteId}/${type}-pdf/${filiereId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      const cd = response.headers.get("Content-Disposition");
+      const match = cd && cd.match(/filename="?([^"]+)"?/);
+      a.download = match ? match[1] : "document.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Erreur téléchargement PDF:", err);
+    }
+  };
+
+  const viewPdf = async (visiteId, filiereId, type) => {
+    const win = window.open("", "_blank");
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`/api/visites/${visiteId}/${type}-pdf/${filiereId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        win.location.href = window.URL.createObjectURL(blob);
+      } else {
+        win.close();
+      }
+    } catch {
+      win.close();
+    }
+  };
+
   const badgeStatut = (statut) => {
     if (statut === "validee") return <span className="badge bg-success">Validée</span>;
     return <span className="badge bg-warning text-dark">En attente</span>;
@@ -266,27 +307,68 @@ export default function VisitesSuivi() {
                     <td>{v.nb_eleves}</td>
                     <td>{v.nom_professeur}</td>
                     <td>{badgeStatut(v.statut)}</td>
-                    <td style={{ whiteSpace: "nowrap" }}>
-                      <button
-                        className="btn btn-sm btn-secondary me-1"
-                        onClick={() => ouvrirEdition(v.id)}
-                      >
-                        Modifier
-                      </button>
-                      {adminRole === "principal" && v.statut !== "validee" && (
+                    <td>
+                      <div style={{ whiteSpace: "nowrap" }}>
                         <button
-                          className="btn btn-sm btn-success me-1"
-                          onClick={() => handleValider(v.id)}
+                          className="btn btn-sm btn-secondary me-1"
+                          onClick={() => ouvrirEdition(v.id)}
                         >
-                          Valider
+                          Modifier
                         </button>
+                        {adminRole === "principal" && v.statut !== "validee" && (
+                          <button
+                            className="btn btn-sm btn-success me-1"
+                            onClick={() => handleValider(v.id)}
+                          >
+                            Valider
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDelete(v.id)}
+                        >
+                          Supprimer
+                        </button>
+                      </div>
+                      {v.statut === "validee" && Array.isArray(v.filieres_data) && (
+                        <div style={{ marginTop: 8, borderTop: "1px solid #dee2e6", paddingTop: 6 }}>
+                          {v.filieres_data.map((f) => (
+                            <div key={f.id} style={{ marginBottom: 6 }}>
+                              <small style={{ display: "block", color: "#555", marginBottom: 3, fontWeight: 500 }}>
+                                {f.nom}
+                              </small>
+                              <button
+                                className="btn btn-sm btn-outline-primary me-1"
+                                style={{ fontSize: "0.75rem", padding: "2px 6px" }}
+                                onClick={() => viewPdf(v.id, f.id, "notice")}
+                              >
+                                Notice
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-secondary me-1"
+                                style={{ fontSize: "0.75rem", padding: "2px 6px" }}
+                                onClick={() => downloadPdf(v.id, f.id, "notice")}
+                              >
+                                ↓ Notice
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-primary me-1"
+                                style={{ fontSize: "0.75rem", padding: "2px 6px" }}
+                                onClick={() => viewPdf(v.id, f.id, "emargement")}
+                              >
+                                Émargement
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-secondary"
+                                style={{ fontSize: "0.75rem", padding: "2px 6px" }}
+                                onClick={() => downloadPdf(v.id, f.id, "emargement")}
+                              >
+                                ↓ Émargement
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       )}
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(v.id)}
-                      >
-                        Supprimer
-                      </button>
                     </td>
                   </tr>
                 ))}

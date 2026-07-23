@@ -163,7 +163,9 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
 
     try {
         const result = await pool.query(`
-            SELECT v.*, STRING_AGG(f.nom_filiere, ', ') AS filieres
+            SELECT v.*,
+                STRING_AGG(f.nom_filiere, ', ' ORDER BY f.nom_filiere) AS filieres,
+                JSON_AGG(JSON_BUILD_OBJECT('id', f.id, 'nom', f.nom_filiere) ORDER BY f.nom_filiere) AS filieres_data
             FROM visites v
             JOIN visite_filieres vf ON vf.visite_id = v.id
             JOIN filieres f ON f.id = vf.filiere_id
@@ -370,6 +372,68 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
     } catch (error) {
         console.error('Erreur lors de la validation de la visite :', error);
         res.status(500).json({ message: 'Erreur lors de la validation de la visite' });
+    }
+});
+
+
+router.get('/:id/notice-pdf/:filiere_id', authenticate, requireAdmin, async (req, res) => {
+    const { id, filiere_id } = req.params;
+    try {
+        const visiteResult = await pool.query('SELECT * FROM visites WHERE id = $1', [id]);
+        if (visiteResult.rows.length === 0) return res.status(404).json({ message: 'Visite introuvable' });
+        const visite = visiteResult.rows[0];
+
+        const filiereResult = await pool.query('SELECT nom_filiere FROM filieres WHERE id = $1', [filiere_id]);
+        if (filiereResult.rows.length === 0) return res.status(404).json({ message: 'Filière introuvable' });
+        const filiere = filiereResult.rows[0];
+
+        const niveauLabel = visite.niveau === '1A' ? '1ère année' : visite.niveau === '2A' ? '2ème année' : '3ème année';
+        const dateFormatee = new Date(visite.date_visite).toLocaleDateString('fr-FR');
+        const dateRabat = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+        const pdfBuffer = await generateNoticePdf(visite, filiere.nom_filiere, dateFormatee, dateRabat, niveauLabel);
+
+        const nomFichier = `Note_visite_${visite.entreprise.replace(/\s+/g, '_')}_${dateFormatee.replace(/\//g, '-')}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${nomFichier}"`);
+        res.send(pdfBuffer);
+    } catch (error) {
+        console.error('Erreur génération notice PDF:', error);
+        res.status(500).json({ message: 'Erreur lors de la génération du PDF' });
+    }
+});
+
+
+router.get('/:id/emargement-pdf/:filiere_id', authenticate, requireAdmin, async (req, res) => {
+    const { id, filiere_id } = req.params;
+    try {
+        const visiteResult = await pool.query('SELECT * FROM visites WHERE id = $1', [id]);
+        if (visiteResult.rows.length === 0) return res.status(404).json({ message: 'Visite introuvable' });
+        const visite = visiteResult.rows[0];
+
+        const filiereResult = await pool.query('SELECT nom_filiere FROM filieres WHERE id = $1', [filiere_id]);
+        if (filiereResult.rows.length === 0) return res.status(404).json({ message: 'Filière introuvable' });
+        const filiere = filiereResult.rows[0];
+
+        const niveauLabel = visite.niveau === '1A' ? '1ère année' : visite.niveau === '2A' ? '2ème année' : '3ème année';
+        const dateFormatee = new Date(visite.date_visite).toLocaleDateString('fr-FR');
+
+        const countResult = await pool.query(
+            `SELECT COUNT(*) AS total FROM etudiants_eligibles
+             WHERE niveau = $1 AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2)) AND actif = true`,
+            [visite.niveau, filiere.nom_filiere]
+        );
+        const totalEtudiants = parseInt(countResult.rows[0].total, 10) || visite.nb_eleves || 0;
+
+        const emargementBuffer = await generateEmargementPdf(totalEtudiants, visite, filiere.nom_filiere, dateFormatee, niveauLabel);
+
+        const nomFichier = `Emargement_${filiere.nom_filiere.replace(/\s+/g, '_')}_${dateFormatee.replace(/\//g, '-')}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${nomFichier}"`);
+        res.send(emargementBuffer);
+    } catch (error) {
+        console.error('Erreur génération émargement PDF:', error);
+        res.status(500).json({ message: 'Erreur lors de la génération du PDF' });
     }
 });
 
