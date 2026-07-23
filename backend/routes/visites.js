@@ -44,9 +44,11 @@ function validerChampsVisite(body) {
         return 'Nombre d\'élèves invalide (1-1000).';
     if (!Number.isInteger(Number(nb_professeurs)) || Number(nb_professeurs) < 1 || Number(nb_professeurs) > 50)
         return 'Nombre de professeurs invalide (1-50).';
-    if (!TRANSPORTS_ELEVE.includes(mode_transport_eleve))
+    const valsEleve = (mode_transport_eleve || '').split(',').map(v => v.trim()).filter(Boolean);
+    if (valsEleve.length === 0 || !valsEleve.every(v => TRANSPORTS_ELEVE.includes(v)))
         return 'Mode de transport élèves invalide.';
-    if (!TRANSPORTS_PROF.includes(mode_transport_prof))
+    const valsProf = (mode_transport_prof || '').split(',').map(v => v.trim()).filter(Boolean);
+    if (valsProf.length === 0 || !valsProf.every(v => TRANSPORTS_PROF.includes(v)))
         return 'Mode de transport professeurs invalide.';
     if (!nom_professeur || nom_professeur.trim().length < 2 || nom_professeur.length > 200)
         return 'Nom du professeur invalide.';

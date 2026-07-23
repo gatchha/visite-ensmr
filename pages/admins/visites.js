@@ -29,9 +29,9 @@ export default function AdminVisites() {
     heure_depart: "",
     nb_gr_eleves: "",
     nb_eleves: "",
-    mode_transport_eleve: "Ecole",
+    mode_transport_eleve: ["Ecole"],
     nb_professeurs: "",
-    mode_transport_prof: "Service",
+    mode_transport_prof: ["Service"],
     nom_professeur: "",
     observations: "",
     filieres: [],
@@ -53,6 +53,18 @@ export default function AdminVisites() {
     }));
   };
 
+  const handleTransportToggle = (field, valeur) => {
+    setForm((prev) => {
+      const current = prev[field];
+      return {
+        ...prev,
+        [field]: current.includes(valeur)
+          ? current.filter((v) => v !== valeur)
+          : [...current, valeur],
+      };
+    });
+  };
+
   const handleFiliereToggle = (id) => {
     setForm((prev) => {
       const dejaSelectionne = prev.filieres.includes(id);
@@ -72,7 +84,11 @@ export default function AdminVisites() {
     try {
       const res = await authFetch("/api/visites", {
         method: "POST",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          mode_transport_eleve: form.mode_transport_eleve.join(","),
+          mode_transport_prof: form.mode_transport_prof.join(","),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -169,10 +185,20 @@ export default function AdminVisites() {
 
           <div className="mb-3">
             <label className="form-label">Transport des élèves</label>
-            <select className="form-select" name="mode_transport_eleve" value={form.mode_transport_eleve} onChange={handleChange}>
-              <option value="Ecole">Ecole</option>
-              <option value="Prestataire">Prestataire</option>
-            </select>
+            <div>
+              {["Ecole", "Prestataire"].map((opt) => (
+                <div className="form-check form-check-inline" key={opt}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id={`transport-eleve-${opt}`}
+                    checked={form.mode_transport_eleve.includes(opt)}
+                    onChange={() => handleTransportToggle("mode_transport_eleve", opt)}
+                  />
+                  <label className="form-check-label" htmlFor={`transport-eleve-${opt}`}>{opt}</label>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="row mb-3">
@@ -182,10 +208,20 @@ export default function AdminVisites() {
             </div>
             <div className="col">
               <label className="form-label">Transport des professeurs</label>
-              <select className="form-select" name="mode_transport_prof" value={form.mode_transport_prof} onChange={handleChange}>
-                <option value="Service">Service</option>
-                <option value="Personnel">Personnel</option>
-              </select>
+              <div>
+                {["Service", "Personnel"].map((opt) => (
+                  <div className="form-check form-check-inline" key={opt}>
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`transport-prof-${opt}`}
+                      checked={form.mode_transport_prof.includes(opt)}
+                      onChange={() => handleTransportToggle("mode_transport_prof", opt)}
+                    />
+                    <label className="form-check-label" htmlFor={`transport-prof-${opt}`}>{opt}</label>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

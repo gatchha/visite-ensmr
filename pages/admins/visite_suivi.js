@@ -13,9 +13,9 @@ const FORM_VIDE = {
   heure_depart: "",
   nb_gr_eleves: "",
   nb_eleves: "",
-  mode_transport_eleve: "Ecole",
+  mode_transport_eleve: ["Ecole"],
   nb_professeurs: "",
-  mode_transport_prof: "Service",
+  mode_transport_prof: ["Service"],
   nom_professeur: "",
   observations: "",
   filieres: [],
@@ -104,9 +104,9 @@ export default function VisitesSuivi() {
         heure_depart: data.heure_depart || "",
         nb_gr_eleves: data.nb_gr_eleves || "",
         nb_eleves: data.nb_eleves || "",
-        mode_transport_eleve: data.mode_transport_eleve || "Ecole",
+        mode_transport_eleve: data.mode_transport_eleve ? data.mode_transport_eleve.split(",").map(v => v.trim()) : ["Ecole"],
         nb_professeurs: data.nb_professeurs || "",
-        mode_transport_prof: data.mode_transport_prof || "Service",
+        mode_transport_prof: data.mode_transport_prof ? data.mode_transport_prof.split(",").map(v => v.trim()) : ["Service"],
         nom_professeur: data.nom_professeur || "",
         observations: data.observations || "",
         filieres: data.filiere_ids || [],
@@ -126,6 +126,18 @@ export default function VisitesSuivi() {
   const handleChangeEdition = (e) => {
     const { name, value } = e.target;
     setFormEdition((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTransportToggleEdition = (field, valeur) => {
+    setFormEdition((prev) => {
+      const current = prev[field];
+      return {
+        ...prev,
+        [field]: current.includes(valeur)
+          ? current.filter((v) => v !== valeur)
+          : [...current, valeur],
+      };
+    });
   };
 
   const handleFiliereToggleEdition = (id) => {
@@ -154,7 +166,11 @@ export default function VisitesSuivi() {
     try {
       const res = await authFetch(`/api/visites/${visiteEnEdition}`, {
         method: "PUT",
-        body: JSON.stringify(formEdition),
+        body: JSON.stringify({
+          ...formEdition,
+          mode_transport_eleve: formEdition.mode_transport_eleve.join(","),
+          mode_transport_prof: formEdition.mode_transport_prof.join(","),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -476,10 +492,20 @@ export default function VisitesSuivi() {
 
               <div className="mb-3">
                 <label className="form-label">Transport des élèves</label>
-                <select className="form-select" name="mode_transport_eleve" value={formEdition.mode_transport_eleve} onChange={handleChangeEdition}>
-                  <option value="Ecole">Ecole</option>
-                  <option value="Prestataire">Prestataire</option>
-                </select>
+                <div>
+                  {["Ecole", "Prestataire"].map((opt) => (
+                    <div className="form-check form-check-inline" key={opt}>
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id={`edit-transport-eleve-${opt}`}
+                        checked={formEdition.mode_transport_eleve.includes(opt)}
+                        onChange={() => handleTransportToggleEdition("mode_transport_eleve", opt)}
+                      />
+                      <label className="form-check-label" htmlFor={`edit-transport-eleve-${opt}`}>{opt}</label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="row mb-3">
@@ -489,10 +515,20 @@ export default function VisitesSuivi() {
                 </div>
                 <div className="col">
                   <label className="form-label">Transport des professeurs</label>
-                  <select className="form-select" name="mode_transport_prof" value={formEdition.mode_transport_prof} onChange={handleChangeEdition}>
-                    <option value="Service">Service</option>
-                    <option value="Personnel">Personnel</option>
-                  </select>
+                  <div>
+                    {["Service", "Personnel"].map((opt) => (
+                      <div className="form-check form-check-inline" key={opt}>
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={`edit-transport-prof-${opt}`}
+                          checked={formEdition.mode_transport_prof.includes(opt)}
+                          onChange={() => handleTransportToggleEdition("mode_transport_prof", opt)}
+                        />
+                        <label className="form-check-label" htmlFor={`edit-transport-prof-${opt}`}>{opt}</label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
