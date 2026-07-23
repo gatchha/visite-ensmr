@@ -18,9 +18,17 @@ function getSceauBase64() {
     return `data:image/png;base64,${buffer.toString('base64')}`;
 }
 
+function getLogoBase64() {
+    const logoPath = path.join(__dirname, '..', 'assets', 'logo-ENIM.png');
+    if (!fs.existsSync(logoPath)) return null;
+    const buffer = fs.readFileSync(logoPath);
+    return `data:image/png;base64,${buffer.toString('base64')}`;
+}
+
 async function generateNoticePdf(visite, nomFiliere, dateFormatee, dateRabat, niveauLabel) {
     const formatHeure = (h) => h ? String(h).slice(0, 5) : '';
     const sceauSrc = getSceauBase64();
+    const logoSrc = getLogoBase64();
 
     const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -58,7 +66,7 @@ async function generateNoticePdf(visite, nomFiliere, dateFormatee, dateRabat, ni
 
 <table class="header-table">
   <tr>
-    <td class="logo-cell"></td>
+    <td class="logo-cell">${logoSrc ? `<img src="${logoSrc}" alt="Logo ENIM">` : ''}</td>
     <td class="title-cell">
       <div class="ecole">ÉCOLE NATIONALE SUPÉRIEURE DES MINES DE RABAT</div>
       <div class="dept">Service des Stages</div>
