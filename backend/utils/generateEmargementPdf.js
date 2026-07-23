@@ -18,16 +18,17 @@ function getSceauBase64() {
     return `data:image/png;base64,${buffer.toString('base64')}`;
 }
 
-async function generateEmargementPdf(totalEtudiants, visite, nomFiliere, dateFormatee, niveauLabel) {
+async function generateEmargementPdf(etudiants, visite, nomFiliere, dateFormatee, niveauLabel) {
     const sceauSrc = getSceauBase64();
     const dateRabat = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const totalEtudiants = etudiants.length;
 
-    const lignes = Array.from({ length: totalEtudiants }, (_, i) => `
+    const lignes = etudiants.map((e, i) => `
         <tr>
             <td>${i + 1}</td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td>${escapeHtml(e.matricule || '')}</td>
+            <td>${escapeHtml(e.nom || '')}</td>
+            <td>${escapeHtml(e.prenom || '')}</td>
             <td></td>
         </tr>
     `).join('');
@@ -52,14 +53,16 @@ async function generateEmargementPdf(totalEtudiants, visite, nomFiliere, dateFor
   table.emargement { width: 100%; border-collapse: collapse; }
   table.emargement th { background-color: #002147; color: white; padding: 7px 8px; border: 1px solid #999; font-size: 11px; text-align: center; }
   table.emargement td { padding: 6px 8px; border: 1px solid #bbb; font-size: 11px; text-align: center; height: 28px; }
-  .sceau { position: fixed; bottom: 40px; right: 40px; width: 100px; opacity: 0.8; }
+  .sceau { width: 90px; opacity: 0.85; }
 </style>
 </head>
 <body>
 
 <table class="header-table">
   <tr>
-    <td style="width:180px;"></td>
+    <td style="width:110px; vertical-align:middle;">
+      ${sceauSrc ? `<img class="sceau" src="${sceauSrc}" alt="">` : ''}
+    </td>
     <td class="title-cell">
       <div class="ecole">ÉCOLE NATIONALE SUPÉRIEURE DES MINES DE RABAT</div>
       <div class="dept">Service des Stages</div>
@@ -93,7 +96,6 @@ async function generateEmargementPdf(totalEtudiants, visite, nomFiliere, dateFor
   </tbody>
 </table>
 
-${sceauSrc ? `<img class="sceau" src="${sceauSrc}" alt="Sceau officiel">` : ''}
 
 </body>
 </html>`;

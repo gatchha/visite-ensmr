@@ -337,19 +337,17 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
 
                 const pieces = [{ filename: nomFichier, content: pdfBuffer, contentType: 'application/pdf' }];
 
-                const countResult = await pool.query(
-                    `SELECT COUNT(*) AS total
-                     FROM etudiants_eligibles
-                     WHERE niveau = $1
-                       AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2))
-                       AND actif = true`,
+                const studentsResult = await pool.query(
+                    `SELECT matricule, nom, prenom FROM etudiants_eligibles
+                     WHERE niveau = $1 AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2)) AND actif = true
+                     ORDER BY nom, prenom`,
                     [visite.niveau, filiere.nom_filiere]
                 );
-                const totalEtudiants = parseInt(countResult.rows[0].total, 10) || visite.nb_eleves || 0;
+                const etudiants = studentsResult.rows;
 
-                if (totalEtudiants > 0) {
+                if (etudiants.length > 0) {
                     const emargementBuffer = await generateEmargementPdf(
-                        totalEtudiants, visite, filiere.nom_filiere, dateFormatee, niveauLabel
+                        etudiants, visite, filiere.nom_filiere, dateFormatee, niveauLabel
                     );
                     const nomEmargement = `Emargement_${filiere.nom_filiere.replace(/\s+/g, '_')}_${dateFormatee.replace(/\//g, '-')}.pdf`;
                     pieces.push({ filename: nomEmargement, content: emargementBuffer, contentType: 'application/pdf' });
@@ -420,14 +418,15 @@ router.get('/:id/emargement-pdf/:filiere_id', authenticate, requireAdmin, async 
         const niveauLabel = visite.niveau === '1A' ? '1ère année' : visite.niveau === '2A' ? '2ème année' : '3ème année';
         const dateFormatee = new Date(visite.date_visite).toLocaleDateString('fr-FR');
 
-        const countResult = await pool.query(
-            `SELECT COUNT(*) AS total FROM etudiants_eligibles
-             WHERE niveau = $1 AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2)) AND actif = true`,
+        const studentsResult = await pool.query(
+            `SELECT matricule, nom, prenom FROM etudiants_eligibles
+             WHERE niveau = $1 AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2)) AND actif = true
+             ORDER BY nom, prenom`,
             [visite.niveau, filiere.nom_filiere]
         );
-        const totalEtudiants = parseInt(countResult.rows[0].total, 10) || visite.nb_eleves || 0;
+        const etudiants = studentsResult.rows;
 
-        const emargementBuffer = await generateEmargementPdf(totalEtudiants, visite, filiere.nom_filiere, dateFormatee, niveauLabel);
+        const emargementBuffer = await generateEmargementPdf(etudiants, visite, filiere.nom_filiere, dateFormatee, niveauLabel);
 
         const nomFichier = `Emargement_${filiere.nom_filiere.replace(/\s+/g, '_')}_${dateFormatee.replace(/\//g, '-')}.pdf`;
         res.setHeader('Content-Type', 'application/pdf');
