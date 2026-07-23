@@ -50,9 +50,9 @@ CREATE TABLE visites (
     heure_depart TIME NOT NULL,
     nb_gr_eleves INTEGER NOT NULL,
     nb_eleves INTEGER NOT NULL,
-    mode_transport_eleve TEXT NOT NULL CHECK (mode_transport_eleve IN ('Prestataire', 'Ecole')),
+    mode_transport_eleve TEXT NOT NULL,
     nb_professeurs INTEGER NOT NULL,
-    mode_transport_prof TEXT NOT NULL CHECK (mode_transport_prof IN ('Personnel', 'Service')),
+    mode_transport_prof TEXT NOT NULL,
     nom_professeur TEXT NOT NULL,
     observations TEXT,
     statut VARCHAR(20) DEFAULT 'en_attente'
