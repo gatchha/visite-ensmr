@@ -100,7 +100,7 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
 
         await client.query('COMMIT');
 
-        const destStage = process.env.SERVICE_STAGE_EMAIL || 'service.stage@enim.ac.ma';
+        const destStage = process.env.SERVICE_STAGE_EMAIL || 'stage@enim.ac.ma';
         const dateFormatee = new Date(date_visite).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
         const createur = req.user ? `${req.user.prenom || ''} ${req.user.nom || ''}`.trim() : 'Un chef de département';
         try {
