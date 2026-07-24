@@ -100,6 +100,31 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
 
         await client.query('COMMIT');
 
+        const destStage = process.env.SERVICE_STAGE_EMAIL || 'service.stage@enim.ac.ma';
+        const dateFormatee = new Date(date_visite).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+        const createur = req.user ? `${req.user.prenom || ''} ${req.user.nom || ''}`.trim() : 'Un chef de département';
+        try {
+            await sendEmail(
+                destStage,
+                `Nouvelle visite planifiée — ${entreprise} (${niveau}) — ${dateFormatee}`,
+                `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+                  <h2 style="color:#002147;">Nouvelle visite d'entreprise planifiée</h2>
+                  <div style="background:#f8f9fa;padding:15px;border-radius:5px;border-left:4px solid #002147;margin:20px 0;">
+                    <p><strong>Entreprise :</strong> ${escapeHtml(entreprise)}</p>
+                    <p><strong>Ville :</strong> ${escapeHtml(ville)}</p>
+                    <p><strong>Date :</strong> ${dateFormatee}</p>
+                    <p><strong>Niveau :</strong> ${escapeHtml(niveau)}</p>
+                    <p><strong>Nombre d'élèves :</strong> ${nb_eleves}</p>
+                    <p><strong>Planifiée par :</strong> ${escapeHtml(createur)}</p>
+                  </div>
+                  <p>Connectez-vous à la plateforme visite-ensmr pour valider cette visite.</p>
+                  <p style="color:#6c757d;font-size:12px;">Service des Stages — ENSMR</p>
+                </div>`
+            );
+        } catch (emailError) {
+            console.warn('Erreur envoi email notification visite :', emailError.message);
+        }
+
         res.status(201).json({ message: 'Visite créée avec succès', id: visiteId });
     } catch (error) {
         await client.query('ROLLBACK');
