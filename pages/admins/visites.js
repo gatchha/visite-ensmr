@@ -18,6 +18,7 @@ export default function AdminVisites() {
   const router = useRouter();
   const [filieres, setFilieres] = useState([]);
   const [message, setMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const [form, setForm] = useState({
     niveau: "1A",
@@ -92,7 +93,8 @@ export default function AdminVisites() {
       });
       const data = await res.json();
       if (res.ok) {
-        router.push("/admins/visite_suivi?message=Visite+enregistrée+avec+succès");
+        setSubmitted(true);
+        setTimeout(() => router.push("/admins/visite_suivi"), 4000);
       } else {
         setMessage(data.message || "Erreur lors de l'enregistrement");
       }
@@ -102,12 +104,37 @@ export default function AdminVisites() {
     }
   };
 
+  if (submitted) {
+    return (
+      <>
+        <Navbar isLoggedIn={true} />
+        <div className="container" style={{ marginTop: "120px", marginBottom: "50px", textAlign: "center", padding: "3rem" }}>
+          <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>✅</div>
+          <h2 style={{ color: "#002147", marginBottom: "0.75rem" }}>Visite enregistrée avec succès !</h2>
+          <p style={{ color: "#666", fontSize: "1.1rem", marginBottom: "2rem" }}>
+            La visite a bien été saisie. Vous allez être redirigé vers le suivi des visites…
+          </p>
+          <button
+            onClick={() => router.push("/admins/visite_suivi")}
+            style={{
+              backgroundColor: "#002147", color: "white", border: "none",
+              padding: "12px 28px", borderRadius: "8px", fontSize: "1rem",
+              cursor: "pointer", fontWeight: "600"
+            }}
+          >
+            Voir le suivi des visites
+          </button>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <Navbar isLoggedIn={true} />
       <div className="container" style={{ marginTop: "100px", marginBottom: "50px" }}>
         <h2>Saisir une visite</h2>
-        {message && <div className="alert alert-info">{message}</div>}
+        {message && <div className="alert alert-danger">{message}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
