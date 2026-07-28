@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:15-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -17,6 +18,7 @@ services:
   backend:
     build: ./backend
     container_name: visite_ensmr_backend
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET}
@@ -34,6 +36,7 @@ services:
   frontend:
     build: .
     container_name: visite_ensmr_frontend
+    restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: ${FRONTEND_URL}
     depends_on:
@@ -42,6 +45,7 @@ services:
   nginx:
     image: nginx:alpine
     container_name: visite_ensmr_nginx
+    restart: unless-stopped
     ports:
       - "3002:80"
     volumes:
