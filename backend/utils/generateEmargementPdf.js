@@ -18,8 +18,16 @@ function getSceauBase64() {
     return `data:image/png;base64,${buffer.toString('base64')}`;
 }
 
+function getLogoBase64() {
+    const logoPath = path.join(__dirname, '..', 'assets', 'logo-ENIM.png');
+    if (!fs.existsSync(logoPath)) return null;
+    const buffer = fs.readFileSync(logoPath);
+    return `data:image/png;base64,${buffer.toString('base64')}`;
+}
+
 async function generateEmargementPdf(etudiants, visite, nomFiliere, dateFormatee, niveauLabel) {
     const sceauSrc = getSceauBase64();
+    const logoSrc = getLogoBase64();
     const dateRabat = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
     const totalEtudiants = etudiants.length;
 
@@ -45,7 +53,7 @@ async function generateEmargementPdf(etudiants, visite, nomFiliere, dateFormatee
   .title-cell { text-align: center; }
   .title-cell .ecole { font-size: 13px; font-weight: bold; }
   .title-cell .dept { font-size: 11px; margin-top: 4px; }
-  .date-cell { text-align: right; font-size: 11px; width: 160px; }
+  .date-cell { text-align: right; font-size: 11px; width: 140px; }
   hr { margin: 16px 0; border: none; border-top: 1px solid #ccc; }
   .titre { text-align: center; font-size: 14px; font-weight: bold; text-decoration: underline; margin: 14px 0 10px; }
   .infos { margin-bottom: 16px; line-height: 1.9; font-size: 11px; }
@@ -53,15 +61,18 @@ async function generateEmargementPdf(etudiants, visite, nomFiliere, dateFormatee
   table.emargement { width: 100%; border-collapse: collapse; }
   table.emargement th { background-color: #002147; color: white; padding: 7px 8px; border: 1px solid #999; font-size: 11px; text-align: center; }
   table.emargement td { padding: 6px 8px; border: 1px solid #bbb; font-size: 11px; text-align: center; height: 28px; }
-  .sceau { width: 90px; opacity: 0.85; }
+  .marque-cell { width: 150px; vertical-align: middle; white-space: nowrap; }
+  .logo { width: 80px; vertical-align: middle; }
+  .sceau { width: 58px; opacity: 0.85; vertical-align: middle; margin-left: 6px; }
 </style>
 </head>
 <body>
 
 <table class="header-table">
   <tr>
-    <td style="width:110px; vertical-align:middle;">
-      ${sceauSrc ? `<img class="sceau" src="${sceauSrc}" alt="">` : ''}
+    <td class="marque-cell">
+      ${logoSrc ? `<img class="logo" src="${logoSrc}" alt="Logo ENSMR">` : ''}
+      ${sceauSrc ? `<img class="sceau" src="${sceauSrc}" alt="Sceau officiel">` : ''}
     </td>
     <td class="title-cell">
       <div class="ecole">ÉCOLE NATIONALE SUPÉRIEURE DES MINES DE RABAT</div>
