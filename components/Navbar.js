@@ -5,6 +5,7 @@ export default function Navbar({ isLoggedIn = false }) {
   const router = useRouter();
   const [userType, setUserType] = useState(null);
   const [adminRole, setAdminRole] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     // Détecter le type d'utilisateur connecté
@@ -14,7 +15,13 @@ export default function Navbar({ isLoggedIn = false }) {
     setAdminRole(storedAdminRole);
   }, []);
 
+  const navigate = (href) => {
+    setMenuOpen(false);
+    router.push(href);
+  };
+
   const handleLogout = () => {
+    setMenuOpen(false);
     // Supprimer toutes les données utilisateur du localStorage
     localStorage.removeItem("etudiant");
     localStorage.removeItem("user");
@@ -47,112 +54,151 @@ export default function Navbar({ isLoggedIn = false }) {
   };
 
   return (
-    <nav
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "1rem 2rem",
-        backgroundColor: "#ffffff",
-        color: "#002147",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-      }}
-    >
-      {/* Logo ENSMR */}
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-        <img
-          src="/images/logo-ENIM.png"
-          alt="ENSMR Logo"
-          style={{
-            height: "40px",
-            transform: "scale(1.3)",
-            transformOrigin: "left center",
-          }}
-        />
-      </div>
+    <nav className="ensmr-nav">
+      <img
+        src="/images/logo-ENIM.png"
+        alt="ENSMR Logo"
+        className="ensmr-logo"
+        onClick={() => navigate(isLoggedIn ? getDashboardLink() : "/")}
+      />
 
-      {/* Liens de navigation */}
-      <div style={{ display: "flex", gap: "2rem", fontSize: "1rem" }}>
-        {/* Affiche "Tableau de bord" uniquement si connecté */}
-        {isLoggedIn && userType === "admin" && (
+      <button
+        className="ensmr-burger"
+        aria-label="Menu"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        {menuOpen ? "✕" : "☰"}
+      </button>
+
+      <div className={`ensmr-links${menuOpen ? " open" : ""}`}>
+        {isLoggedIn && (userType === "admin" || userType === "etudiant") && (
           <a
             href={getDashboardLink()}
-            style={{ color: "#002147", textDecoration: "none", cursor: "pointer" }}
-            onClick={(e) => {
-              e.preventDefault();
-              router.push(getDashboardLink());
-            }}
+            onClick={(e) => { e.preventDefault(); navigate(getDashboardLink()); }}
           >
             Tableau de bord
           </a>
         )}
 
-        {/* Affiche "Tableau de bord" pour les étudiants */}
-        {isLoggedIn && userType === "etudiant" && (
-          <a
-            href={getDashboardLink()}
-            style={{ color: "#002147", textDecoration: "none", cursor: "pointer" }}
-            onClick={(e) => {
-              e.preventDefault();
-              router.push(getDashboardLink());
-            }}
-          >
-            Tableau de bord
-          </a>
-        )}
-
-        {/* 🆕 MODIFIÉ : Affiche "Mon Profil" pour les admins ET les étudiants */}
         {isLoggedIn && (userType === "admin" || userType === "etudiant") && (
           <a
             href={userType === "admin" ? "/admins/profil" : "/etudiant/profil"}
-            style={{ color: "#002147", textDecoration: "none", cursor: "pointer" }}
             onClick={(e) => {
               e.preventDefault();
-              router.push(userType === "admin" ? "/admins/profil" : "/etudiant/profil");
+              navigate(userType === "admin" ? "/admins/profil" : "/etudiant/profil");
             }}
           >
             Mon Profil
           </a>
         )}
 
-        {/* 🆕 CORRIGÉ : Le bouton affiche "Déconnexion" si connecté */}
-        {isLoggedIn ? (
-          <button
-            onClick={handleLogout}
-            style={{
-              backgroundColor: "#002147",
-              color: "#ffffff",
-              border: "none",
-              padding: "0.5rem 1rem",
-              borderRadius: "6px",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            Déconnexion
-          </button>
-        ) : (
-          <button
-            onClick={handleLogin}
-            style={{
-              backgroundColor: "#002147",
-              color: "#ffffff",
-              border: "none",
-              padding: "0.5rem 1rem",
-              borderRadius: "6px",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            Connexion
-          </button>
-        )}
+        <button className="ensmr-cta" onClick={isLoggedIn ? handleLogout : handleLogin}>
+          {isLoggedIn ? "Déconnexion" : "Connexion"}
+        </button>
       </div>
+
+      <style jsx>{`
+        .ensmr-nav {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.75rem 2rem;
+          background-color: #ffffff;
+          color: #002147;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .ensmr-logo {
+          height: 52px;
+          width: auto;
+          display: block;
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+
+        .ensmr-burger {
+          display: none;
+          background: none;
+          border: none;
+          color: #002147;
+          font-size: 1.5rem;
+          line-height: 1;
+          padding: 0.25rem 0.4rem;
+          cursor: pointer;
+        }
+
+        .ensmr-links {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+          font-size: 1rem;
+        }
+
+        .ensmr-links :global(a) {
+          color: #002147;
+          text-decoration: none;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .ensmr-cta {
+          background-color: #002147;
+          color: #ffffff;
+          border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          font-weight: bold;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 900px) {
+          .ensmr-nav {
+            padding: 0.6rem 1rem;
+            flex-wrap: wrap;
+          }
+
+          .ensmr-logo {
+            height: 42px;
+          }
+
+          .ensmr-burger {
+            display: block;
+          }
+
+          .ensmr-links {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+            padding-top: 0.6rem;
+            margin-top: 0.6rem;
+            border-top: 1px solid #e2e8ee;
+          }
+
+          .ensmr-links.open {
+            display: flex;
+          }
+
+          .ensmr-links :global(a) {
+            padding: 0.85rem 0.25rem;
+            border-bottom: 1px solid #f0f3f6;
+          }
+
+          .ensmr-cta {
+            margin-top: 0.75rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+          }
+        }
+      `}</style>
     </nav>
   );
 }
