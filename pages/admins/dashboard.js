@@ -110,7 +110,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const filieresIncompletes = filieres.filter((f) => (f.est_3a ? !f.email_2a || !f.email_3a : !f.email_1a));
+  const filieresIncompletes = filieres.filter((f) => (f.est_3a ? !f.email_3a : !f.email_1a || !f.email_2a));
 
   const cards = [
     {
@@ -311,8 +311,9 @@ export default function AdminDashboard() {
           </h3>
           <p style={{ fontSize: '14px', color: '#555', marginBottom: '1rem' }}>
             Fichier Excel comportant une colonne <strong>département</strong>, une colonne{' '}
-            <strong>filière</strong>, une colonne <strong>spécialité</strong> et les adresses de
-            diffusion par niveau.
+            <strong>filière</strong>, une colonne <strong>est_3a</strong> et les adresses de
+            diffusion par niveau. Le tronc commun attend une adresse de 1ère et de 2ème année,
+            les filières de spécialité une adresse de 3ème année.
           </p>
 
           {filieres.length > 0 && (

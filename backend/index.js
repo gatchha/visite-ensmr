@@ -365,7 +365,7 @@ app.post('/api/admin/import-filieres', authenticate, requireAdmin, uploadExcel.s
         if (resultat.rows[0].inserted) stats.inseres++;
         else stats.mis_a_jour++;
 
-        const niveauxAttendus = est3a ? [['2A', email2a], ['3A', email3a]] : [['1A', email1a]];
+        const niveauxAttendus = est3a ? [['3A', email3a]] : [['1A', email1a], ['2A', email2a]];
         const manquants = niveauxAttendus.filter(([, adresse]) => !adresse).map(([niveau]) => niveau);
         if (manquants.length > 0) {
           stats.sans_email.push(`${nomFiliere} — ${manquants.join(', ')}`);
