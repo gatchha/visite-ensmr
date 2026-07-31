@@ -55,6 +55,31 @@ function validerChampsVisite(body) {
     return null;
 }
 
+async function recupererEleves(niveau, filiere) {
+    if (filiere.est_3a) {
+        const r = await pool.query(
+            `SELECT matricule, nom, prenom FROM etudiants_eligibles
+             WHERE niveau = $1 AND actif = true
+               AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2))
+             ORDER BY nom, prenom`,
+            [niveau, filiere.nom_filiere]
+        );
+        return r.rows;
+    }
+    const r = await pool.query(
+        `SELECT e.matricule, e.nom, e.prenom FROM etudiants_eligibles e
+         WHERE e.niveau = $1 AND e.actif = true
+           AND EXISTS (
+             SELECT 1 FROM filieres f
+             WHERE f.departement_id = $2
+               AND LOWER(TRIM(f.nom_filiere)) = LOWER(TRIM(e.nom_filiere_nettoye))
+           )
+         ORDER BY e.nom, e.prenom`,
+        [niveau, filiere.departement_id]
+    );
+    return r.rows;
+}
+
 router.post('/', authenticate, requireAdmin, async (req, res) => {
     const {
         niveau, date_visite, entreprise, adresse, ville,
@@ -364,26 +389,7 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
 
                 const pieces = [{ filename: nomFichier, content: pdfBuffer, contentType: 'application/pdf' }];
 
-                const studentsResult = filiere.est_3a
-                    ? await pool.query(
-                        `SELECT matricule, nom, prenom FROM etudiants_eligibles
-                         WHERE niveau = $1 AND actif = true
-                           AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2))
-                         ORDER BY nom, prenom`,
-                        [visite.niveau, filiere.nom_filiere]
-                    )
-                    : await pool.query(
-                        `SELECT e.matricule, e.nom, e.prenom FROM etudiants_eligibles e
-                         WHERE e.niveau = $1 AND e.actif = true
-                           AND EXISTS (
-                             SELECT 1 FROM filieres f
-                             WHERE f.departement_id = $2
-                               AND LOWER(TRIM(f.nom_filiere)) = LOWER(TRIM(e.nom_filiere_nettoye))
-                           )
-                         ORDER BY e.nom, e.prenom`,
-                        [visite.niveau, filiere.departement_id]
-                    );
-                const etudiants = studentsResult.rows;
+                const etudiants = await recupererEleves(visite.niveau, filiere);
 
                 if (etudiants.length === 0) {
                     avertissements.push(`${filiere.nom_filiere} : aucun élève trouvé, la feuille d'émargement n'a pas été jointe`);
@@ -460,20 +466,14 @@ router.get('/:id/emargement-pdf/:filiere_id', authenticate, requireAdmin, async 
         if (visiteResult.rows.length === 0) return res.status(404).json({ message: 'Visite introuvable' });
         const visite = visiteResult.rows[0];
 
-        const filiereResult = await pool.query('SELECT nom_filiere FROM filieres WHERE id = $1', [filiere_id]);
+        const filiereResult = await pool.query('SELECT nom_filiere, est_3a, departement_id FROM filieres WHERE id = $1', [filiere_id]);
         if (filiereResult.rows.length === 0) return res.status(404).json({ message: 'Filière introuvable' });
         const filiere = filiereResult.rows[0];
 
         const niveauLabel = visite.niveau === '1A' ? '1ère année' : visite.niveau === '2A' ? '2ème année' : '3ème année';
         const dateFormatee = new Date(visite.date_visite).toLocaleDateString('fr-FR');
 
-        const studentsResult = await pool.query(
-            `SELECT matricule, nom, prenom FROM etudiants_eligibles
-             WHERE niveau = $1 AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2)) AND actif = true
-             ORDER BY nom, prenom`,
-            [visite.niveau, filiere.nom_filiere]
-        );
-        const etudiants = studentsResult.rows;
+        const etudiants = await recupererEleves(visite.niveau, filiere);
 
         const emargementBuffer = await generateEmargementPdf(etudiants, visite, filiere.nom_filiere, dateFormatee, niveauLabel);
 
