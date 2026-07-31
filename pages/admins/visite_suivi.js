@@ -190,9 +190,15 @@ export default function VisitesSuivi() {
     if (!confirm("Valider cette visite et envoyer la notification aux étudiants ?")) return;
     try {
       const res = await authFetch(`/api/visites/${id}/valider`, { method: "PATCH" });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         alert(data.message || "Erreur lors de la validation.");
+      } else if (Array.isArray(data.avertissements) && data.avertissements.length > 0) {
+        alert(
+          "Visite validée, mais avec des réserves :\n\n" +
+          data.avertissements.map((a) => "• " + a).join("\n") +
+          "\n\nVérifiez les listes de diffusion et la liste des élèves depuis le tableau de bord."
+        );
       }
     } catch (err) {
       console.error("Erreur validation:", err);

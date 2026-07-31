@@ -305,6 +305,7 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
         }
 
         const visite = result.rows[0];
+        const avertissements = [];
 
         try {
             const colEmail = visite.niveau === '1A' ? 'email_1a'
@@ -330,7 +331,10 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
                 'directeur@enim.ac.ma,direction.pedagogique@enim.ac.ma,sg@enim.ac.ma,achat@enim.ac.ma,restaurant@enim.ac.ma';
 
             for (const filiere of filieresVisite.rows) {
-                if (!filiere.email_liste) continue;
+                if (!filiere.email_liste) {
+                    avertissements.push(`${filiere.nom_filiere} : aucune adresse de diffusion, personne n'a été prévenu`);
+                    continue;
+                }
 
                 const pdfBuffer = await generateNoticePdf(
                     visite, filiere.nom_filiere, dateFormatee, dateRabat, niveauLabel
@@ -381,6 +385,10 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
                     );
                 const etudiants = studentsResult.rows;
 
+                if (etudiants.length === 0) {
+                    avertissements.push(`${filiere.nom_filiere} : aucun élève trouvé, la feuille d'émargement n'a pas été jointe`);
+                }
+
                 if (etudiants.length > 0) {
                     const emargementBuffer = await generateEmargementPdf(
                         etudiants, visite, filiere.nom_filiere, dateFormatee, niveauLabel
@@ -402,9 +410,14 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
             console.log(`Notifications envoyées à ${nbEnvoyes} liste(s) de diffusion`);
         } catch (emailError) {
             console.warn('Erreur envoi emails visite :', emailError.message);
+            avertissements.push(`L'envoi a échoué : ${emailError.message}`);
         }
 
-        res.json({ message: 'Visite validée avec succès' });
+        if (avertissements.length > 0) {
+            console.warn('Validation avec réserves :', avertissements.join(' | '));
+        }
+
+        res.json({ message: 'Visite validée avec succès', avertissements });
     } catch (error) {
         console.error('Erreur lors de la validation de la visite :', error);
         res.status(500).json({ message: 'Erreur lors de la validation de la visite' });
