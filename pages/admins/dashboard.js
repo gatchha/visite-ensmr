@@ -9,6 +9,10 @@ export default function AdminDashboard() {
   const [importResult, setImportResult] = useState(null);
   const [anneeImport, setAnneeImport] = useState('');
   const fileInputRef = useRef(null);
+  const [filieres, setFilieres] = useState([]);
+  const [filieresLoading, setFilieresLoading] = useState(false);
+  const [filieresResult, setFilieresResult] = useState(null);
+  const filieresInputRef = useRef(null);
 
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -37,6 +41,10 @@ export default function AdminDashboard() {
     fetch('/api/admin/eligibles/stats', { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setEligiblesStats(data); })
+      .catch(() => {});
+    fetch('/api/admin/filieres/etat', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setFilieres(data); })
       .catch(() => {});
   }, [adminData]);
 
@@ -73,6 +81,36 @@ export default function AdminDashboard() {
       e.target.value = '';
     }
   };
+
+  const handleImportFilieres = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setFilieresLoading(true);
+    setFilieresResult(null);
+    const formData = new FormData();
+    formData.append('fichier', file);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/admin/import-filieres', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      setFilieresResult({ ok: res.ok, ...data });
+      if (res.ok) {
+        const etat = await fetch('/api/admin/filieres/etat', { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json());
+        if (Array.isArray(etat)) setFilieres(etat);
+      }
+    } catch {
+      setFilieresResult({ ok: false, message: 'Erreur serveur' });
+    } finally {
+      setFilieresLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const filieresIncompletes = filieres.filter((f) => (f.est_3a ? !f.email_2a || !f.email_3a : !f.email_1a));
 
   const cards = [
     {
@@ -260,6 +298,103 @@ export default function AdminDashboard() {
                   <li>{importResult.stats.ignores} ignoré(s) (email invalide)</li>
                   {importResult.stats.erreurs?.length > 0 && (
                     <li style={{ color: '#856404' }}>Avertissements : {importResult.stats.erreurs.join(', ')}</li>
+                  )}
+                </ul>
+              )}
+            </div>
+          )}
+
+          <hr style={{ margin: '2rem 0', border: 'none', borderTop: '1px solid #e2e8ee' }} />
+
+          <h3 style={{ color: '#002147', fontSize: '18px', marginTop: 0, marginBottom: '0.5rem' }}>
+            Filières et listes de diffusion
+          </h3>
+          <p style={{ fontSize: '14px', color: '#555', marginBottom: '1rem' }}>
+            Fichier Excel comportant une colonne <strong>département</strong>, une colonne{' '}
+            <strong>filière</strong>, une colonne <strong>spécialité</strong> et les adresses de
+            diffusion par niveau.
+          </p>
+
+          {filieres.length > 0 && (
+            <div style={{ marginBottom: '1.5rem', fontSize: '13px', color: '#444' }}>
+              <div style={{ marginBottom: '0.3rem' }}>
+                <strong>{filieres.length}</strong> filière(s) enregistrée(s) —{' '}
+                {filieres.filter((f) => !f.est_3a).length} en tronc commun,{' '}
+                {filieres.filter((f) => f.est_3a).length} en spécialité
+              </div>
+              {filieresIncompletes.length > 0 && (
+                <div style={{
+                  marginTop: '0.6rem',
+                  padding: '0.7rem 0.9rem',
+                  borderRadius: '6px',
+                  backgroundColor: '#fff3cd',
+                  color: '#856404',
+                }}>
+                  <strong>{filieresIncompletes.length} filière(s) sans adresse complète.</strong>{' '}
+                  Une visite concernant ces filières ne préviendra personne pour le niveau manquant.
+                  <div style={{ marginTop: '0.4rem', fontSize: '12px' }}>
+                    {filieresIncompletes.slice(0, 6).map((f) => f.nom_filiere).join(' · ')}
+                    {filieresIncompletes.length > 6 ? ` … et ${filieresIncompletes.length - 6} autre(s)` : ''}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <input
+            ref={filieresInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleImportFilieres}
+            style={{ display: 'none' }}
+          />
+
+          <button
+            onClick={() => filieresInputRef.current.click()}
+            disabled={filieresLoading}
+            style={{
+              width: '100%',
+              padding: '0.85rem',
+              backgroundColor: '#002147',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              fontSize: '15px',
+              cursor: filieresLoading ? 'not-allowed' : 'pointer',
+              opacity: filieresLoading ? 0.7 : 1,
+            }}
+          >
+            {filieresLoading ? 'Import en cours...' : 'Choisir le fichier des filières'}
+          </button>
+
+          {filieresResult && (
+            <div style={{
+              marginTop: '1rem',
+              padding: '1rem',
+              borderRadius: '8px',
+              backgroundColor: filieresResult.ok ? '#d4edda' : '#f8d7da',
+              color: filieresResult.ok ? '#155724' : '#721c24',
+              fontSize: '14px',
+            }}>
+              <strong>{filieresResult.message}</strong>
+              {filieresResult.ok && filieresResult.stats && (
+                <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.2rem' }}>
+                  <li>{filieresResult.stats.inseres} filière(s) ajoutée(s)</li>
+                  <li>{filieresResult.stats.mis_a_jour} mise(s) à jour</li>
+                  {filieresResult.stats.departements > 0 && (
+                    <li>{filieresResult.stats.departements} département(s) créé(s)</li>
+                  )}
+                  {filieresResult.stats.ignores > 0 && (
+                    <li>{filieresResult.stats.ignores} ligne(s) ignorée(s)</li>
+                  )}
+                  {filieresResult.stats.sans_email?.length > 0 && (
+                    <li style={{ color: '#856404' }}>
+                      Sans adresse de diffusion : {filieresResult.stats.sans_email.join(' · ')}
+                    </li>
+                  )}
+                  {filieresResult.stats.erreurs?.length > 0 && (
+                    <li style={{ color: '#856404' }}>Avertissements : {filieresResult.stats.erreurs.join(', ')}</li>
                   )}
                 </ul>
               )}

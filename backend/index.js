@@ -255,6 +255,151 @@ app.post('/api/admin/import-eligibles', authenticate, requireAdmin, uploadExcel.
   }
 });
 
+function trouverColonne(entete, predicat) {
+  return entete.find((col) => col && predicat(normaliserTexteImport(col)));
+}
+
+function lireFeuilleFilieres(worksheet) {
+  const dataRaw = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', blankrows: false });
+  let indexEntete = -1;
+  for (let i = 0; i < Math.min(20, dataRaw.length); i++) {
+    const ligne = dataRaw[i].map((c) => normaliserTexteImport(c)).join('');
+    if (ligne.includes('filiere') && ligne.includes('departement')) { indexEntete = i; break; }
+  }
+  if (indexEntete === -1) return null;
+
+  const entete = dataRaw[indexEntete].map((c) => String(c).trim());
+  const colDepartement = trouverColonne(entete, (c) => c.includes('departement'));
+  const colFiliere = trouverColonne(entete, (c) => c.includes('filiere'));
+  if (!colDepartement || !colFiliere) return null;
+
+  const colEst3a = trouverColonne(entete, (c) => c.includes('specialite') || (c.includes('est') && c.includes('3a')));
+  const colEmail1a = trouverColonne(entete, (c) => c.includes('email') && (c.includes('1a') || c.includes('1ere')));
+  const colEmail2a = trouverColonne(entete, (c) => c.includes('email') && (c.includes('2a') || c.includes('2eme')));
+  const colEmail3a = trouverColonne(entete, (c) => c.includes('email') && (c.includes('3a') || c.includes('3eme')));
+
+  const donnees = dataRaw.slice(indexEntete + 1)
+    .map((row) => { const o = {}; entete.forEach((h, i) => { if (h) o[h] = row[i] || ''; }); return o; })
+    .filter((o) => Object.values(o).some((v) => String(v).trim() !== ''));
+
+  return { colDepartement, colFiliere, colEst3a, colEmail1a, colEmail2a, colEmail3a, donnees };
+}
+
+function lireBooleen(valeur) {
+  const v = normaliserTexteImport(valeur);
+  return ['true', 'vrai', 'oui', '1', 'x', 'specialite'].includes(v);
+}
+
+function lireEmail(valeur) {
+  const v = String(valeur || '').replace(/\s+/g, '').toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? v : null;
+}
+
+app.post('/api/admin/import-filieres', authenticate, requireAdmin, uploadExcel.single('fichier'), async (req, res) => {
+  if (!estPrincipalOuSuperAdmin(req.user)) {
+    return res.status(403).json({ message: 'Accès réservé au compte principal' });
+  }
+  if (!req.file) return res.status(400).json({ message: 'Fichier Excel requis' });
+
+  const stats = { departements: 0, inseres: 0, mis_a_jour: 0, ignores: 0, sans_email: [], erreurs: [] };
+
+  try {
+    const workbook = XLSX.readFile(req.file.path);
+
+    let feuille = null;
+    for (const nomFeuille of workbook.SheetNames) {
+      feuille = lireFeuilleFilieres(workbook.Sheets[nomFeuille]);
+      if (feuille) break;
+    }
+
+    if (!feuille) {
+      require('fs').unlinkSync(req.file.path);
+      return res.status(400).json({
+        message: 'Aucune feuille exploitable. Le fichier doit comporter une colonne département et une colonne filière.',
+      });
+    }
+
+    for (const row of feuille.donnees) {
+      const nomDepartement = String(row[feuille.colDepartement] || '').trim();
+      if (!nomDepartement) continue;
+      const insertion = await pool.query(
+        `INSERT INTO departements (nom_departement) VALUES ($1)
+         ON CONFLICT (nom_departement) DO NOTHING RETURNING id`,
+        [nomDepartement]
+      );
+      if (insertion.rows.length > 0) stats.departements++;
+    }
+
+    for (const row of feuille.donnees) {
+      const nomDepartement = String(row[feuille.colDepartement] || '').trim();
+      const nomFiliere = String(row[feuille.colFiliere] || '').trim();
+      if (!nomDepartement || !nomFiliere) { stats.ignores++; continue; }
+
+      const departement = await pool.query(
+        'SELECT id FROM departements WHERE nom_departement = $1',
+        [nomDepartement]
+      );
+      if (departement.rows.length === 0) {
+        stats.erreurs.push(`Département inconnu pour "${nomFiliere}" : ${nomDepartement}`);
+        stats.ignores++;
+        continue;
+      }
+
+      const est3a = feuille.colEst3a ? lireBooleen(row[feuille.colEst3a]) : false;
+      const email1a = feuille.colEmail1a ? lireEmail(row[feuille.colEmail1a]) : null;
+      const email2a = feuille.colEmail2a ? lireEmail(row[feuille.colEmail2a]) : null;
+      const email3a = feuille.colEmail3a ? lireEmail(row[feuille.colEmail3a]) : null;
+
+      try {
+        const resultat = await pool.query(
+          `INSERT INTO filieres (nom_filiere, est_3a, departement_id, email_1a, email_2a, email_3a)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT (nom_filiere, est_3a) DO UPDATE SET
+             departement_id = EXCLUDED.departement_id,
+             email_1a = EXCLUDED.email_1a,
+             email_2a = EXCLUDED.email_2a,
+             email_3a = EXCLUDED.email_3a
+           RETURNING (xmax = 0) AS inserted`,
+          [nomFiliere, est3a, departement.rows[0].id, email1a, email2a, email3a]
+        );
+        if (resultat.rows[0].inserted) stats.inseres++;
+        else stats.mis_a_jour++;
+
+        const niveauxAttendus = est3a ? [['2A', email2a], ['3A', email3a]] : [['1A', email1a]];
+        const manquants = niveauxAttendus.filter(([, adresse]) => !adresse).map(([niveau]) => niveau);
+        if (manquants.length > 0) {
+          stats.sans_email.push(`${nomFiliere} — ${manquants.join(', ')}`);
+        }
+      } catch (erreur) {
+        stats.erreurs.push(`${nomFiliere} : ${erreur.message}`);
+        stats.ignores++;
+      }
+    }
+
+    require('fs').unlinkSync(req.file.path);
+    res.json({ message: 'Import des filières terminé', stats });
+  } catch (error) {
+    if (req.file) try { require('fs').unlinkSync(req.file.path); } catch {}
+    res.status(500).json({ message: 'Erreur lors du traitement du fichier', error: error.message });
+  }
+});
+
+app.get('/api/admin/filieres/etat', authenticate, requireAdmin, async (req, res) => {
+  if (!estPrincipalOuSuperAdmin(req.user)) {
+    return res.status(403).json({ message: 'Accès réservé au compte principal' });
+  }
+  try {
+    const result = await pool.query(`
+      SELECT f.nom_filiere, f.est_3a, d.nom_departement, f.email_1a, f.email_2a, f.email_3a
+      FROM filieres f JOIN departements d ON f.departement_id = d.id
+      ORDER BY f.est_3a, d.nom_departement, f.nom_filiere
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
 app.get('/api/admin/eligibles/stats', authenticate, requireAdmin, async (req, res) => {
   if (!estPrincipalOuSuperAdmin(req.user)) return res.status(403).json({ message: 'Accès réservé au compte principal' });
   try {
