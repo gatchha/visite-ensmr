@@ -25,6 +25,9 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       EMAIL_USER: ${EMAIL_USER}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_OVERRIDE: ${EMAIL_OVERRIDE:-}
+      SERVICE_STAGE_EMAIL: ${SERVICE_STAGE_EMAIL:-stage@enim.ac.ma}
+      CC_VISITE: ${CC_VISITE:-}
       PORT: 4000
     volumes:
       - uploads_data:/app/uploads
