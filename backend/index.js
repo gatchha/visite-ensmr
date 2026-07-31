@@ -8,7 +8,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const XLSX = require('xlsx');
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('./utils/sendEmail');
 const rateLimit = require('express-rate-limit');
 const pool = require('./db');
 const { authenticate, requireAdmin, estPrincipalOuSuperAdmin } = require('./middleware/auth');
@@ -82,16 +82,11 @@ app.post('/api/forgot-password', async (req, res) => {
     const expires = new Date(Date.now() + 3600000);
     await pool.query('UPDATE admins SET reset_token = $1, reset_token_expires = $2 WHERE id = $3', [token, expires, admin.id]);
     const resetUrl = `${process.env.FRONTEND_URL}/admins/reset-password/${token}`;
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com', port: 587, secure: false,
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASSWORD },
-    });
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Réinitialisation de mot de passe',
-      html: `<p>Cliquez sur ce lien pour réinitialiser votre mot de passe : <a href="${resetUrl}">${resetUrl}</a></p><p>Ce lien expire dans 1 heure.</p>`,
-    });
+    await sendEmail(
+      email,
+      'Réinitialisation de mot de passe',
+      `<p>Cliquez sur ce lien pour réinitialiser votre mot de passe : <a href="${resetUrl}">${resetUrl}</a></p><p>Ce lien expire dans 1 heure.</p>`
+    );
     res.json({ message: 'Si ce compte existe, un email a été envoyé.' });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur' });
