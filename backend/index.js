@@ -301,7 +301,7 @@ app.post('/api/admin/import-filieres', authenticate, requireAdmin, uploadExcel.s
   }
   if (!req.file) return res.status(400).json({ message: 'Fichier Excel requis' });
 
-  const stats = { departements: 0, inseres: 0, mis_a_jour: 0, ignores: 0, sans_email: [], erreurs: [] };
+  const stats = { departements: 0, inseres: 0, mis_a_jour: 0, ignores: 0, sans_email: [], hors_3a: [], erreurs: [] };
 
   try {
     const workbook = XLSX.readFile(req.file.path);
@@ -365,10 +365,15 @@ app.post('/api/admin/import-filieres', authenticate, requireAdmin, uploadExcel.s
         if (resultat.rows[0].inserted) stats.inseres++;
         else stats.mis_a_jour++;
 
-        const niveauxAttendus = est3a ? [['3A', email3a]] : [['1A', email1a], ['2A', email2a]];
-        const manquants = niveauxAttendus.filter(([, adresse]) => !adresse).map(([niveau]) => niveau);
-        if (manquants.length > 0) {
-          stats.sans_email.push(`${nomFiliere} — ${manquants.join(', ')}`);
+        if (!est3a) {
+          const manquants = [['1A', email1a], ['2A', email2a]]
+            .filter(([, adresse]) => !adresse)
+            .map(([niveau]) => niveau);
+          if (manquants.length > 0) {
+            stats.sans_email.push(`${nomFiliere} — ${manquants.join(', ')}`);
+          }
+        } else if (!email3a) {
+          stats.hors_3a.push(nomFiliere);
         }
       } catch (erreur) {
         stats.erreurs.push(`${nomFiliere} : ${erreur.message}`);

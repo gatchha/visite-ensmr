@@ -110,7 +110,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const filieresIncompletes = filieres.filter((f) => (f.est_3a ? !f.email_3a : !f.email_1a || !f.email_2a));
+  const filieresIncompletes = filieres.filter((f) => !f.est_3a && (!f.email_1a || !f.email_2a));
+  const filieresHors3a = filieres.filter((f) => f.est_3a && !f.email_3a);
 
   const cards = [
     {
@@ -331,12 +332,19 @@ export default function AdminDashboard() {
                   backgroundColor: '#fff3cd',
                   color: '#856404',
                 }}>
-                  <strong>{filieresIncompletes.length} filière(s) sans adresse complète.</strong>{' '}
-                  Une visite concernant ces filières ne préviendra personne pour le niveau manquant.
+                  <strong>{filieresIncompletes.length} filière(s) de tronc commun sans adresse complète.</strong>{' '}
+                  Une visite de 1ère ou 2ème année les concernant ne préviendrait personne.
                   <div style={{ marginTop: '0.4rem', fontSize: '12px' }}>
-                    {filieresIncompletes.slice(0, 6).map((f) => f.nom_filiere).join(' · ')}
-                    {filieresIncompletes.length > 6 ? ` … et ${filieresIncompletes.length - 6} autre(s)` : ''}
+                    {filieresIncompletes.map((f) => f.nom_filiere).join(' · ')}
                   </div>
+                </div>
+              )}
+
+              {filieresHors3a.length > 0 && (
+                <div style={{ marginTop: '0.6rem', fontSize: '12px', color: '#6b7885' }}>
+                  Sans adresse de 3ème année, donc non proposées pour une visite de ce niveau :{' '}
+                  {filieresHors3a.map((f) => f.nom_filiere).join(' · ')}. Elles restent nécessaires
+                  au rattachement des élèves de 2ème année.
                 </div>
               )}
             </div>
@@ -391,7 +399,12 @@ export default function AdminDashboard() {
                   )}
                   {filieresResult.stats.sans_email?.length > 0 && (
                     <li style={{ color: '#856404' }}>
-                      Sans adresse de diffusion : {filieresResult.stats.sans_email.join(' · ')}
+                      Tronc commun sans adresse de diffusion : {filieresResult.stats.sans_email.join(' · ')}
+                    </li>
+                  )}
+                  {filieresResult.stats.hors_3a?.length > 0 && (
+                    <li style={{ color: '#6b7885' }}>
+                      Non proposées en 3ème année, faute d'adresse : {filieresResult.stats.hors_3a.join(' · ')}
                     </li>
                   )}
                   {filieresResult.stats.erreurs?.length > 0 && (
