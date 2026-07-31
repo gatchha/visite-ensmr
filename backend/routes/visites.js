@@ -312,7 +312,7 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
                            : 'email_3a';
 
             const filieresVisite = await pool.query(
-                `SELECT f.nom_filiere, f.${colEmail} AS email_liste
+                `SELECT f.nom_filiere, f.est_3a, f.departement_id, f.${colEmail} AS email_liste
                  FROM filieres f
                  JOIN visite_filieres vf ON vf.filiere_id = f.id
                  WHERE vf.visite_id = $1`,
@@ -360,12 +360,25 @@ router.patch('/:id/valider', authenticate, requireAdmin, async (req, res) => {
 
                 const pieces = [{ filename: nomFichier, content: pdfBuffer, contentType: 'application/pdf' }];
 
-                const studentsResult = await pool.query(
-                    `SELECT matricule, nom, prenom FROM etudiants_eligibles
-                     WHERE niveau = $1 AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2)) AND actif = true
-                     ORDER BY nom, prenom`,
-                    [visite.niveau, filiere.nom_filiere]
-                );
+                const studentsResult = filiere.est_3a
+                    ? await pool.query(
+                        `SELECT matricule, nom, prenom FROM etudiants_eligibles
+                         WHERE niveau = $1 AND actif = true
+                           AND LOWER(TRIM(nom_filiere_nettoye)) = LOWER(TRIM($2))
+                         ORDER BY nom, prenom`,
+                        [visite.niveau, filiere.nom_filiere]
+                    )
+                    : await pool.query(
+                        `SELECT e.matricule, e.nom, e.prenom FROM etudiants_eligibles e
+                         WHERE e.niveau = $1 AND e.actif = true
+                           AND EXISTS (
+                             SELECT 1 FROM filieres f
+                             WHERE f.departement_id = $2
+                               AND LOWER(TRIM(f.nom_filiere)) = LOWER(TRIM(e.nom_filiere_nettoye))
+                           )
+                         ORDER BY e.nom, e.prenom`,
+                        [visite.niveau, filiere.departement_id]
+                    );
                 const etudiants = studentsResult.rows;
 
                 if (etudiants.length > 0) {
