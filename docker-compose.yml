@@ -26,7 +26,7 @@ services:
       EMAIL_USER: ${EMAIL_USER}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
       EMAIL_OVERRIDE: ${EMAIL_OVERRIDE:-}
-      SERVICE_STAGE_EMAIL: ${SERVICE_STAGE_EMAIL:-stage@enim.ac.ma}
+      SERVICE_STAGES_EMAIL: ${SERVICE_STAGES_EMAIL:-stage@enim.ac.ma}
       CC_VISITE: ${CC_VISITE:-}
       PORT: 4000
     volumes:
@@ -41,7 +41,7 @@ services:
     container_name: visite_ensmr_frontend
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: ${FRONTEND_URL}
+      BACKEND_URL: http://backend:4000
     depends_on:
       - backend
 
