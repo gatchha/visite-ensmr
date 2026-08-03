@@ -8,3 +8,6 @@ COMPTES_ADMINS.txt
 .local/
 *.xlsx
 ~$*
+
+# Le fichier de reference des filieres fait partie du livrable
+!Livrable plateforme/*.xlsx
