@@ -209,6 +209,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {(adminData?.role === 'principal' || adminData?.role === 'super_admin') && (
       <div style={{ maxWidth: '600px', margin: '4rem auto 3rem', padding: '0 1rem' }}>
         <div style={{ background: 'white', borderRadius: '16px', padding: '2rem', boxShadow: '0 4px 16px rgba(0,0,0,0.07)', border: '1px solid #e3e8ee' }}>
           <h3 style={{ color: '#002147', marginTop: 0, marginBottom: '0.5rem' }}>
@@ -416,6 +417,7 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
